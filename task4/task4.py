@@ -17,7 +17,6 @@ TASK2_GLOB = str(REPO_ROOT / "task2_output" / "part-*.csv")
 META_PATH = REPO_ROOT / "task4" / "stations_meta.csv"
 OUTPUT_DIR = REPO_ROOT / "task4_output"
 
-# ── palette ────────────────────────────────────────────────────────────────
 BG = "#0E1014"        # page
 SURF = "#14171D"      # elevated (maps, tables)
 INK = "#E8E5DC"       # primary text
@@ -31,17 +30,12 @@ WARM = "#E58868"
 AMBER = "#D5A84A"
 BONE = "#B8B2A3"
 
-# bands mapped by thermal character, not latitude order —
-# sub-arctic stations run warmer (amber), high-arctic colder (ice)
 BAND_COLOR = {
     "Sub-Arctic": AMBER,
     "Arctic": BONE,
     "High Arctic": COLD,
 }
 BAND_ORDER = ["Sub-Arctic", "Arctic", "High Arctic"]
-
-
-# ─── data ──────────────────────────────────────────────────────────────────
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
@@ -67,9 +61,6 @@ def station_deltas(df: pd.DataFrame) -> pd.DataFrame:
     out["END"] = out["STATION"].map(piv[last])
     out["CHANGE"] = out["END"] - out["START"]
     return out.dropna(subset=["START", "END"])
-
-
-# ─── chart primitives ──────────────────────────────────────────────────────
 
 AXIS = dict(
     showgrid=False, zeroline=False, showline=True,
@@ -219,8 +210,6 @@ def change_ranking_figure(deltas: pd.DataFrame) -> go.Figure:
     )
     return fig
 
-
-# ─── CSS ────────────────────────────────────────────────────────────────────
 
 CSS = f"""
 <style>
@@ -393,7 +382,6 @@ def main() -> None:
     df = load_data()
     years_all = sorted(df["YEAR"].unique())
 
-    # sidebar ──────────────────────────────────────────────────────────────
     with st.sidebar:
         st.markdown('<div class="eyebrow">Filters</div>', unsafe_allow_html=True)
         regions = st.multiselect("Latitude band", BAND_ORDER, default=BAND_ORDER)
@@ -419,7 +407,6 @@ def main() -> None:
 
     deltas = station_deltas(view)
 
-    # header ──────────────────────────────────────────────────────────────
     st.markdown(
         '<div class="eyebrow">NOAA GSOD · DATA 479 · 2026</div>'
         '<h1 class="hed">Four winters over the Norwegian Arctic.</h1>'
@@ -431,7 +418,6 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    # KPI strip ───────────────────────────────────────────────────────────
     mean_all = view["AVG_TEMP"].mean()
     warmest = deltas.loc[deltas["MEAN"].idxmax()]
     coldest = deltas.loc[deltas["MEAN"].idxmin()]
@@ -448,7 +434,6 @@ def main() -> None:
 
     st.markdown('<hr class="rule"/>', unsafe_allow_html=True)
 
-    # hero — band trend ───────────────────────────────────────────────────
     band_means = view.groupby("REGION")["AVG_TEMP"].mean().to_dict()
     spread = max(band_means.values()) - min(band_means.values())
     st.markdown(
@@ -462,7 +447,6 @@ def main() -> None:
     st.plotly_chart(band_trend_figure(view), use_container_width=True,
                     config={"displayModeBar": False})
 
-    # map + ranking ───────────────────────────────────────────────────────
     st.markdown('<hr class="rule"/>', unsafe_allow_html=True)
     left, right = st.columns([1, 1.4], gap="large")
     with left:
@@ -488,7 +472,6 @@ def main() -> None:
         st.plotly_chart(change_ranking_figure(deltas), use_container_width=True,
                         config={"displayModeBar": False})
 
-    # station comparison ──────────────────────────────────────────────────
     st.markdown('<hr class="rule"/>', unsafe_allow_html=True)
     st.markdown(
         '<div class="sec-h">Compare stations directly</div>'
@@ -538,7 +521,6 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-    # anomalies ───────────────────────────────────────────────────────────
     st.markdown('<hr class="rule"/>', unsafe_allow_html=True)
 
     swings = view.sort_values(["STATION", "YEAR"]).copy()
@@ -569,7 +551,6 @@ def main() -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
     flagged.to_csv(OUTPUT_DIR / "extreme_years.csv", index=False)
 
-    # footer ──────────────────────────────────────────────────────────────
     st.markdown(
         f"<div style='margin-top:40px; padding-top:20px; border-top:1px solid {RULE};"
         f" font-size:11px; color:{MUTED}; font-family: \"JetBrains Mono\", monospace;'>"
